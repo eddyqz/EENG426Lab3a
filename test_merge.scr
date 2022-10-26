@@ -1,2 +1,19 @@
-import "lab_3_cells.act";
-merge mrg;
+watch ChanIn
+watch ChanOut
+status X
+
+set ChanIn.r 0
+set ChanIn.a 0
+cycle
+
+set ChanIn.r 0
+set ChanIn.a 1
+cycle
+
+set ChanIn.r 1
+set ChanIn.a 0
+cycle
+
+set ChanIn.r 1
+set ChanIn.a 1
+cycle
