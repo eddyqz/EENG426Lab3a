@@ -1,0 +1,146 @@
+import globals;
+import std::cells;
+import std::channel;
+import std::gates::treegates;
+
+//
+// your definitions go here
+// Reset will be available as a global signal at this point, as will
+// Vdd and GND
+// 
+// Process names from a namespace use C++ naming conventions
+// (e.g. std::channel::bd). You can also open a namespace.
+// The ACT command open std::cells will add std::cells to the
+// search path for process names.
+//
+open std::cells;
+open std::channel;
+open std::gates::treegates;
+
+
+defproc onePlaceBufferv2 (channel::bd?<8> in1; channel::bd?<8> in2; channel::bd! <8> ChanOut)
+{
+	// only need to declare input and output channels
+	/* need to write out the gates and for the control circuit (the circuit
+	that handles the 4-phase handshake). The control circuit will be slightly
+	different for each dataflow component. Figure out how to connect
+	the l.r, l.a, r.r, r.a signals to each other.
+	Also, don't forget to make a pulse generator send a pulse signal to a latch.
+	
+	In this case, since this is a buffer, you need latches to store all
+	the data in between input and output. 
+	
+	Note: no need to declare Reset in port list because it's global.
+	
+	Note: no need to explicitly say stuff like "l.r is high" or 
+	"r.a is low"; just describe how they're connected.
+	
+	Always remember that, ultimately, you're describing circuits.
+	
+	*/
+	
+	cells::LATCH latch00, latch01, latch02, latch03, latch04, latch05, latch06, latch07;
+	
+	// connects each latch's input to the input channel's data bits
+	latch00.D = in1.d[0];
+	latch01.D = in1.d[1];
+	latch02.D = in1.d[2];
+	latch03.D = in1.d[3];
+	latch04.D = in1.d[4];
+	latch05.D = in1.d[5];
+	latch06.D = in1.d[6];
+	latch07.D = in1.d[7];
+	
+	cells::LATCH latch10, latch11, latch12, latch13, latch14, latch15, latch16, latch17;
+	
+	// connects each latch's input to the input channel's data bits
+	latch10.D = in2.d[0];
+	latch11.D = in2.d[1];
+	latch12.D = in2.d[2];
+	latch13.D = in2.d[3];
+	latch14.D = in2.d[4];
+	latch15.D = in2.d[5];
+	latch16.D = in2.d[6];
+	latch17.D = in2.d[7];
+	
+	// declare the full adder blocks that we need and connect the
+	// carry-ins with the carry-outs
+	
+	cells::FAX1 adder[8];
+	(i : 7 : adder[i].YC=adder[i+1].C;)
+	
+	// create bools to store the intermediate sum bit
+	bool addSumBits[8];
+	bool addCarryBits[8];
+	
+	adder[0](latch00.Q, latch10.Q, 0, addCarryBits[0], addSumBits[0]);
+	adder[1](latch01.Q, latch11.Q, addCarryBits[0], addCarryBits[1], addSumBits[1]);
+	adder[2](latch02.Q, latch12.Q, addCarryBits[1], addCarryBits[2], addSumBits[2]);
+	adder[3](latch03.Q, latch13.Q, addCarryBits[2], addCarryBits[3], addSumBits[3]);
+	adder[4](latch04.Q, latch14.Q, addCarryBits[3], addCarryBits[4], addSumBits[4]);
+	adder[5](latch05.Q, latch15.Q, addCarryBits[4], addCarryBits[5], addSumBits[5]);
+	adder[6](latch06.Q, latch16.Q, addCarryBits[5], addCarryBits[6], addSumBits[6]);
+	adder[7](latch07.Q, latch17.Q, addCarryBits[6], addCarryBits[7], addSumBits[7]);
+
+	
+	// connects each output channel's data bits to each latch's output
+	ChanOut.d[0] = addSumBits[0];
+	ChanOut.d[1] = addSumBits[1];
+	ChanOut.d[2] = addSumBits[2];
+	ChanOut.d[3] = addSumBits[3];
+	ChanOut.d[4] = addSumBits[4];
+	ChanOut.d[5] = addSumBits[5];
+	ChanOut.d[6] = addSumBits[6];
+	ChanOut.d[7] = addSumBits[7];
+	
+	// control circuit
+	
+	// inputs to c-element
+	bool _R.a;
+	cells::inv RaInv (ChanOut.a, _R.a);
+	
+	bool cElemInput[2];
+	cElemInput[0] = ChanIn.r;
+	cElemInput[1] = _R.a;
+	
+	bool cElemOutput;
+	std::gates::treegates::ctree<2,true> cElem(cElemInput, cElemOutput);
+	
+	bool _cElemOutput;
+	cells::inv cElemInv (cElemOutput, _cElemOutput);
+	
+	ChanOut.r = _cElemOutput;
+	ChanIn.a = _cElemOutput;
+	
+	// pulse generator
+	
+	bool pGenSt1, pGenSt2, pGenSt3;
+	cells::inv pGenInv1(ChanIn.a, pGenSt1);
+	cells::inv pGenInv2(pGenSt1, pGenSt2);
+	cells::inv pGenInv3(pGenSt2, pGenSt3);
+	
+	bool pulse;
+	cells::AND2X1 pGenAnd(ChanIn.a, pGenSt3, pulse);
+	
+	// connecting each latch to the pulse generator
+	latch00.CLK = pulse;
+	latch01.CLK = pulse;
+	latch02.CLK = pulse;
+	latch03.CLK = pulse;
+	latch04.CLK = pulse;
+	latch05.CLK = pulse;
+	latch06.CLK = pulse;
+	latch07.CLK = pulse;
+	
+	latch10.CLK = pulse;
+	latch11.CLK = pulse;
+	latch12.CLK = pulse;
+	latch13.CLK = pulse;
+	latch14.CLK = pulse;
+	latch15.CLK = pulse;
+	latch16.CLK = pulse;
+	latch17.CLK = pulse;
+	
+	
+}
+
