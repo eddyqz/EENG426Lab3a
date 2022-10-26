@@ -69,7 +69,7 @@ defproc merge (channel::bd?<8> A,B,C; channel::bd!<8> R)
 
     split(C,Ca,Cb);  
 
-    cells::MUX2X1 mux(A.d,B.d,C.d,mux_out)
+    cells::MUX2X1 mux(A.d,B.d,C.d,mux_out);
     
     gates::ctree <3,true> c_elem_1;
     c_elem_1.in[0] = Ca;
@@ -90,6 +90,6 @@ defproc merge (channel::bd?<8> A,B,C; channel::bd!<8> R)
     cells::inv NOT_4(a6,R.r);
 
     pulse_gen (R.r,a7);
-    cells:LATCH latch_1(a7,mux_out,latch_out);
+    cells::LATCH latch_1(a7,mux_out,latch_out);
 }
 
