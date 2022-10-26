@@ -1,0 +1,114 @@
+import globals;
+import std::cells;
+import std::channel;
+import std::gates::treegates;
+
+//
+// your definitions go here
+// Reset will be available as a global signal at this point, as will
+// Vdd and GND
+// 
+// Process names from a namespace use C++ naming conventions
+// (e.g. std::channel::bd). You can also open a namespace.
+// The ACT command open std::cells will add std::cells to the
+// search path for process names.
+//
+open std::cells;
+open std::channel;
+open std::gates::treegates;
+
+
+defproc onePlaceBufferv2 (channel::bd?<8> ChanIn; channel::bd! <8> ChanOut1; channel::bd! <8> ChanOut2)
+{
+	// only need to declare input and output channels
+	/* need to write out the gates and for the control circuit (the circuit
+	that handles the 4-phase handshake). The control circuit will be slightly
+	different for each dataflow component. Figure out how to connect
+	the l.r, l.a, r.r, r.a signals to each other.
+	Also, don't forget to make a pulse generator send a pulse signal to a latch.
+	
+	In this case, since this is a buffer, you need latches to store all
+	the data in between input and output. 
+	
+	Note: no need to declare Reset in port list because it's global.
+	
+	Note: no need to explicitly say stuff like "l.r is high" or 
+	"r.a is low"; just describe how they're connected.
+	
+	Always remember that, ultimately, you're describing circuits.
+	
+	*/
+	
+	cells::LATCH latch0, latch1, latch2, latch3, latch4, latch5, latch6, latch7;
+	
+	// connects each latch's input to the input channel's data bits
+	latch0.D = ChanIn.d[0];
+	latch1.D = ChanIn.d[1];
+	latch2.D = ChanIn.d[2];
+	latch3.D = ChanIn.d[3];
+	latch4.D = ChanIn.d[4];
+	latch5.D = ChanIn.d[5];
+	latch6.D = ChanIn.d[6];
+	latch7.D = ChanIn.d[7];
+	
+	// connects each output channel's data bits to each latch's output
+	ChanOut1.d[0] = latch0.Q;
+	ChanOut1.d[1] = latch1.Q;
+	ChanOut1.d[2] = latch2.Q;
+	ChanOut1.d[3] = latch3.Q;
+	ChanOut1.d[4] = latch4.Q;
+	ChanOut1.d[5] = latch5.Q;
+	ChanOut1.d[6] = latch6.Q;
+	ChanOut1.d[7] = latch7.Q;
+	
+	ChanOut2.d[0] = latch0.Q;
+	ChanOut2.d[1] = latch1.Q;
+	ChanOut2.d[2] = latch2.Q;
+	ChanOut2.d[3] = latch3.Q;
+	ChanOut2.d[4] = latch4.Q;
+	ChanOut2.d[5] = latch5.Q;
+	ChanOut2.d[6] = latch6.Q;
+	ChanOut2.d[7] = latch7.Q;
+	
+	// control circuit
+	
+	// inputs to c-element
+	bool _R.a;
+	cells::inv RaInv (ChanOut.a, _R.a);
+	
+	bool cElemInput[2];
+	cElemInput[0] = ChanIn.r;
+	cElemInput[1] = _R.a;
+	
+	bool cElemOutput;
+	std::gates::treegates::ctree<2,true> cElem(cElemInput, cElemOutput);
+	
+	bool _cElemOutput;
+	cells::inv cElemInv (cElemOutput, _cElemOutput);
+	
+	ChanOut.r = _cElemOutput;
+	ChanIn.a = _cElemOutput;
+	
+	// pulse generator
+	
+	bool pGenSt1, pGenSt2, pGenSt3;
+	cells::inv pGenInv1(ChanIn.a, pGenSt1);
+	cells::inv pGenInv2(pGenSt1, pGenSt2);
+	cells::inv pGenInv3(pGenSt2, pGenSt3);
+	
+	bool pulse;
+	cells::AND2X1 pGenAnd(ChanIn.a, pGenSt3, pulse);
+	
+	// connecting each latch to the pulse generator
+	latch0.CLK = pulse;
+	latch1.CLK = pulse;
+	latch2.CLK = pulse;
+	latch3.CLK = pulse;
+	latch4.CLK = pulse;
+	latch5.CLK = pulse;
+	latch6.CLK = pulse;
+	latch7.CLK = pulse;
+	
+	
+}
+
