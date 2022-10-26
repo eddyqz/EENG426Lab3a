@@ -1,0 +1,19 @@
+watch ChanIn
+watch ChanOut1
+watch ChanOut2
+status X
+
+set ChanIn 0
+cycle
+
+set ChanIn 3
+cycle
+
+set ChanIn 2
+cycle
+
+set ChanIn 63
+cycle
+
+set ChanIn 0
+cycle

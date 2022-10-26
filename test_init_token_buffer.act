@@ -1,0 +1,2 @@
+import "init_token_buffer.act";
+initTokenBuffer initBuf;

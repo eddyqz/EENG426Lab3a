@@ -1,0 +1,22 @@
+watch in1
+watch in2
+watch ChanOut
+status X
+
+set in1 0
+set in2 0
+cycle
+
+set in1 1
+set in2 2
+cycle
+
+set in1 20
+set in2 43
+cycle
+
+set in1 3
+set in2 4
+cycle
+
+

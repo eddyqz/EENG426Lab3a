@@ -1,0 +1,2 @@
+import "two_way_copy.act";
+copy copy;
