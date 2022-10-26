@@ -18,7 +18,7 @@ open std::channel;
 open std::gates::treegates;
 
 
-defproc onePlaceBufferv2 (channel::bd?<8> ChanIn; channel::bd!<8> ChanOut)
+defproc onePlaceBufferv2 (channel::bd?<8> ChanIn; channel::bd!<true,0,8> ChanOut)
 {
 	// only need to declare input and output channels
 	/* need to write out the gates and for the control circuit (the circuit
