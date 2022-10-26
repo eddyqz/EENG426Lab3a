@@ -1,0 +1,95 @@
+import globals;
+import std::cells;
+import std::channel;
+import std::gates;
+
+//
+// your definitions go here
+// Reset will be available as a global signal at this point, as will
+// Vdd and GND
+// 
+// Process names from a namespace use C++ naming conventions
+// (e.g. std::channel::bd). You can also open a namespace.
+// The ACT command open std::cells will add std::cells to the
+// search path for process names.
+//
+open std::cells;
+open std::channel;
+open std::gates;
+
+defproc sink (channel::bd?<8> ChanIn; channel::bd!<8> ChanOut)
+{   
+    bool  a1;
+    cells::inv NOT1(ChanIn.r,a1);
+    cells::inv NOT2(a1,ChanIn.a);
+}
+
+defproc source (channel::bd?<8> ChanIn; channel::bd!<8> ChanOut)
+{   
+    cells::NOR2X1 nor2(Reset,ChanIn.a,ChanIn.r);
+    
+    ChanOut.d[0] = GND;
+    ChanOut.d[1] = GND;
+    ChanOut.d[2] = GND;
+    ChanOut.d[3] = GND;
+    ChanOut.d[4] = GND;
+    ChanOut.d[5] = GND;
+    ChanOut.d[6] = GND;
+    ChanOut.d[7] = GND;
+}
+
+defproc split (channel::bd?<8> ChanIn; channel::bd!<8> ChanOut)
+{   
+    bool a1,a2,a3;
+
+    cells::inv NOT_1(ChanOut.r,a1);
+    cells::NAND2X1 nand2_1(ChanIn.r,a1,a2);
+    cells::NAND2X1 nand2_2(ChanIn.r,in2,a3);
+
+    cells::inv NOT_2(a2,ChanOut.a);
+    cells::inv NOT_3(a3,ChanIn.a);
+}
+
+defproc pulse_gen (bool?in; bool!out)
+{   
+    bool a1,a2,a3,a4;
+
+    cells::inv NOT_1(in,a1);
+    cells::inv NOT_2(a1,a2);
+    cells::inv NOT_3(a2,a3);
+
+    cells::NAND2X1 nand2_1(in,a3,a4);
+
+    cells::inv NOT_4(a4,out);
+}
+
+defproc merge (channel::bd?<8> A,B,C; channel::bd!<8> R)
+{   
+    bool mux_out,latch_out,a1,a2,a3,a4,a5,a6,a7,Ca,Cb;
+
+    split(C,Ca,Cb);  
+
+    cells::MUX2X1 mux(A.d,B.d,C.d,mux_out)
+    
+    gates::ctree <3,true> c_elem_1;
+    c_elem_1.in[0] = Ca;
+    c_elem_1.in[1] = A.r;
+    cells::inv NOT_1(R.a,a1);
+    c_elem_1.in[2] = a1;
+    c_elem_1.out = a2;
+    cells::inv NOT_2(a2,a3);
+
+    gates::ctree <3,true> c_elem_2;
+    c_elem_2.in[0] = Cb;
+    c_elem_2.in[1] = B.r;
+    c_elem_2.in[2] = R.a;
+    c_elem_2.out = a4;
+    cells::inv NOT_3(a4,a5);
+
+    cells::NOR2X1 nor_1(a3,a5,a6);
+    cells::inv NOT_4(a6,R.r);
+
+    pulse_gen (R.r,a7);
+    cells:LATCH latch_1(a7,mux_out,latch_out);
+}
+

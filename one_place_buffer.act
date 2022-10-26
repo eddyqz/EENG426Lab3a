@@ -1,0 +1,40 @@
+import globals;
+import std::cells;
+import std::channel;
+
+//
+// your definitions go here
+// Reset will be available as a global signal at this point, as will
+// Vdd and GND
+// 
+// Process names from a namespace use C++ naming conventions
+// (e.g. std::channel::bd). You can also open a namespace.
+// The ACT command open std::cells will add std::cells to the
+// search path for process names.
+//
+open std::cells;
+open std::channel;
+
+
+defproc onePlaceBufferv2 (channel::bd?<8> ChanIn; channel::bd!<8> ChanOut)
+{
+	// only need to declare input and output channels
+	/* need to write out the gates and for the control circuit (the circuit
+	that handles the 4-phase handshake). The control circuit will be slightly
+	different for each dataflow component. Figure out how to connect
+	the l.r, l.a, r.r, r.a signals to each other.
+	Also, don't forget to make a pulse generator send a pulse signal to a latch.
+	
+	In this case, since this is a buffer, you need latches to store all
+	the data in between input and output. 
+	
+	Note: no need to declare Reset in port list because it's global.
+	
+	Note: no need to explicitly say stuff like "l.r is high" or 
+	"r.a is low"; just describe how they're connected.
+	
+	*/
+	
+	
+}
+

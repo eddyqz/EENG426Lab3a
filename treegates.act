@@ -1,0 +1,253 @@
+/*************************************************************************
+ *
+ *  This file is part of ACT standard library
+ *
+ *  Copyright (c) 2021 Rajit Manohar
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ **************************************************************************
+ */
+namespace std {
+
+export namespace gates {
+
+/*
+ * Build an OR-gate tree (NOR/NAND/optional INV)
+ */
+export template<pint N; pbool invert>
+defproc ortree (bool? in[N]; bool out)
+{
+  bool tout;
+
+  { N > 0 : "What?" };
+
+  pint i, end, j;
+  pbool isinv;
+  isinv = false;
+  i = 0;
+  end = N-1;
+
+  /* dynamic array that holds all the nodes in the completion tree */
+  bool tmp[N];
+  (k:N:tmp[k] = in[k];)
+
+  /* Invariant: i <= end */
+    
+  *[ i != end ->
+     /* 
+      * Invariant: tmp[i..end] has the current signals that need to be
+      * combined together, and "isinv" specifies if they are the inverted
+      * sense or not
+      */
+     j = 0;
+     *[ i < end ->
+        /*-- there are still signals that need to be combined --*/
+        j = j + 1;
+        bool tmp[end+j..end+j];
+        [ i+2 >= end ->
+          /*-- last piece: use either a 2 or 3 input NAND/NOR gate --*/
+          [isinv ->
+            prs { (&k:i..end:tmp[k]) => tmp[end+j]- }
+          [] else ->
+            prs { (|k:i..end:tmp[k]) => tmp[end+j]- }
+          ]
+          i = end;
+        [] else ->
+          /*-- more to come; so use a two input C-element --*/
+          [isinv ->
+            prs { (&k:i..i+1:tmp[k]) => tmp[end+j]- }
+          [] else ->
+            prs { (|k:i..i+1:tmp[k]) => tmp[end+j]- }
+          ]
+          i = i + 2;
+        ]
+        sizing {
+          leak_adjust <- 1; 
+          p_n_mode <- 1;
+          tmp[end+j]{-1}
+        }
+      ]
+      /*-- we just added an inverting layer --*/
+      isinv = ~isinv;
+
+      /*-- update range that has to be combined --*/
+      i = end+1;
+      end = end+j;
+      j = 0;
+  ]
+
+  isinv = invert ? ~isinv : isinv;
+
+  /*-- invert the signal if needed --*/
+  [isinv -> prs { tmp[end] => out- } 
+  [] else -> tmp[end] = out;
+  ]
+  [isinv ->
+  sizing {
+    leak_adjust <- 1; 
+    p_n_mode <- 1;
+    out{-1}
+  }
+  ]
+}
+  
+/*
+ * Build a completion tree using a combination of 2-input and 3-input
+ * C-elements 
+ */
+export template<pint N; pbool invert>
+defproc ctree (bool? in[N]; bool out)
+{
+  bool tout;
+
+  { N > 0 : "What?" };
+
+  pint i, end, j;
+  pbool isinv;
+  isinv = invert;
+  i = 0;
+  end = N-1;
+
+  /* dynamic array that holds all the nodes in the completion tree */
+  bool tmp[N];
+  (k:N:tmp[k] = in[k];)
+
+  /* Invariant: i <= end */
+    
+  *[ i != end ->
+     /* 
+      * Invariant: tmp[i..end] has the current signals that need to be
+      * combined together, and "isinv" specifies if they are the inverted
+      * sense or not
+      */
+     j = 0;
+     *[ i < end ->
+        /*-- there are still signals that need to be combined --*/
+        j = j + 1;
+        bool tmp[end+j..end+j];
+        [ i+2 >= end ->
+          /*-- last piece: use either a 2 or 3 input C-element --*/
+          prs { (&k:i..end:tmp[k]) #> tmp[end+j]- }
+          i = end;
+        [] else ->
+          /*-- more to come; so use a two input C-element --*/
+          prs { (&k:i..i+1:tmp[k]) #> tmp[end+j]- }
+          i = i + 2;
+        ]
+        sizing {
+          leak_adjust <- 1; 
+          p_n_mode <- 1;
+          tmp[end+j]{-1}
+        }
+      ]
+      /*-- we just added an inverting layer --*/
+      isinv = ~isinv;
+
+      /*-- update range that has to be combined --*/
+      i = end+1;
+      end = end+j;
+      j = 0;
+  ]
+  /*-- invert the signal if needed --*/
+  [isinv -> prs { tmp[end] => out- }
+  [] else -> tmp[end] = out;
+  ]
+  [isinv -> 
+  sizing {
+    p_n_mode <- 1;
+    leak_adjust <- 1; 
+    out{-1}
+  }
+  ]
+}
+
+export template<pint PNRAT, N>
+defproc sigbuf_gen (bool in; bool out[N])
+{
+  bool _out;
+
+  { N >= 0 : "sigbuf: parameter error" };
+
+/* -- there should be a better way to do this. --*/ 
+ [ N < 2 -> (i:N: out[i] = in;)
+ [] else ->
+     [  N <= 32 ->
+	prs {
+	 in => _out-
+	 _out => out[0]-
+	}
+	  /* -- just use a sized driver here -- */
+	(i:N-1:out[i+1]=out[0];)
+	[ N < 4 ->
+	  sizing {
+	    leak_adjust <- 1;
+	    p_n_mode <- PNRAT;
+	    _out {-1}; out[0] {-2}
+	  }
+	 [] N >= 4 & N < 6 -> 
+          sizing {
+            leak_adjust <- 1; 
+	    p_n_mode <- PNRAT;
+      	    _out {-1}; out[0] {-4}
+         }
+	 [] N = 6 ->
+          sizing {
+            leak_adjust <- 1; 
+	    p_n_mode <- PNRAT;
+	    _out {-2}; out[0] {-6,2}
+         }
+	 [] N >= 7 & N < 10 ->
+          sizing {
+            leak_adjust <- 1; 
+	    p_n_mode <- PNRAT;
+      	    _out {-2}; out[0] {-8,2}
+         }
+	 [] N >= 10 & N < 14 ->
+          sizing {
+            leak_adjust <- 1; 
+	    p_n_mode <- PNRAT;
+      	    _out {-3}; out[0] {-12,3}
+         }
+	 [] else ->
+          sizing {
+            leak_adjust <- 1; 
+	    p_n_mode <- PNRAT;
+      	    _out {-4}; out[0] {-16,4}
+	  }
+	 ]
+     [] else ->
+       /* generate sized driver for N/32 outputs */
+       pint C = (N+31)/32;
+       sigbuf_gen<PNRAT,C> sb(in);
+   
+      /* add a 32-way driver for the rest, with the last one with
+	 potentially lower fanout */
+      (i:C-1:
+              sigbuf_gen<PNRAT,32> sb2[i..i];
+              sb2[i].in=sb.out[i];
+	      sb2[i].out=out[i*32..i*32+31];
+       )
+       sigbuf_gen<PNRAT,N-(C-1)*32> sb3;
+       sb3.in = sb.out[C-1];
+       sb3.out=out[(C-1)*32..N-1];
+    ]
+ ]
+}
+
+export defproc sigbuf <: sigbuf_gen<0> () { }
+export defproc sigbufa <: sigbuf_gen<1> () { }
+
+}
+
+}
