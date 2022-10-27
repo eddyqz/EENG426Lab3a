@@ -1,18 +1,44 @@
-watch ChanIn
-watch ChanOut
+watch ChanIn.d[0]
+watch ChanIn.d[1]
+watch ChanIn.d[2]
+watch ChanIn.d[3]
+watch ChanIn.d[4]
+watch ChanIn.d[5]
+watch ChanIn.d[6]
+watch ChanIn.d[7]
+
+watch ChanOut.d[0]
+watch ChanOut.d[1]
+watch ChanOut.d[2]
+watch ChanOut.d[3]
+watch ChanOut.d[4]
+watch ChanOut.d[5]
+watch ChanOut.d[6]
+watch ChanOut.d[7]
+
 status X
 
-set ChanIn 0
+set ChanIn.r 1
+
+set ChanIn.d[0] 0
+set ChanIn.d[1] 0
+set ChanIn.d[2] 0
+set ChanIn.d[3] 0
+set ChanIn.d[4] 0
+set ChanIn.d[5] 1
+set ChanIn.d[6] 0
+set ChanIn.d[7] 1
+
 cycle
 
-set ChanIn 3
+set ChanIn.d[0] 0
+set ChanIn.d[1] 0
+set ChanIn.d[2] 0
+set ChanIn.d[3] 0
+set ChanIn.d[4] 0
+set ChanIn.d[5] 0
+set ChanIn.d[6] 1
+set ChanIn.d[7] 0
+
 cycle
 
-set ChanIn 2
-cycle
-
-set ChanIn 63
-cycle
-
-set ChanIn 0
-cycle

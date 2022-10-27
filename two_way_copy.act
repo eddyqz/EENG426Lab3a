@@ -1,7 +1,7 @@
 import globals;
 import std::cells;
 import std::channel;
-import std::gates::treegates;
+import std::gates;
 
 //
 // your definitions go here
@@ -15,10 +15,10 @@ import std::gates::treegates;
 //
 open std::cells;
 open std::channel;
-open std::gates::treegates;
+open std::gates;
 
 
-defproc copy (channel::bd?<8> ChanIn; channel::bd! <8> ChanOut1; channel::bd! <8> ChanOut2)
+defproc copy (std::channel::bd?<8> ChanIn; std::channel::bd! <8> ChanOut1; std::channel::bd! <8> ChanOut2)
 {
 	// only need to declare input and output channels
 	/* need to write out the gates and for the control circuit (the circuit
@@ -39,7 +39,7 @@ defproc copy (channel::bd?<8> ChanIn; channel::bd! <8> ChanOut1; channel::bd! <8
 	
 	*/
 	
-	cells::LATCH latch0, latch1, latch2, latch3, latch4, latch5, latch6, latch7;
+	std::cells::LATCH latch0, latch1, latch2, latch3, latch4, latch5, latch6, latch7;
 	
 	// connects each latch's input to the input channel's data bits
 	latch0.D = ChanIn.d[0];
@@ -73,18 +73,18 @@ defproc copy (channel::bd?<8> ChanIn; channel::bd! <8> ChanOut1; channel::bd! <8
 	// control circuit
 	
 	// inputs to c-element
-	bool _R.a;
-	cells::inv RaInv (ChanOut.a, _R.a);
+	bool _Ra;
+	std::cells::INVX1 RaInv (ChanOut.a, _Ra);
 	
 	bool cElemInput[2];
 	cElemInput[0] = ChanIn.r;
-	cElemInput[1] = _R.a;
+	cElemInput[1] = _Ra;
 	
 	bool cElemOutput;
-	std::gates::treegates::ctree<2,true> cElem(cElemInput, cElemOutput);
+	std::gates::ctree<2,true> cElem(cElemInput, cElemOutput);
 	
 	bool _cElemOutput;
-	cells::inv cElemInv (cElemOutput, _cElemOutput);
+	std::cells::INVX1 cElemInv (cElemOutput, _cElemOutput);
 	
 	ChanOut.r = _cElemOutput;
 	ChanIn.a = _cElemOutput;
@@ -92,12 +92,12 @@ defproc copy (channel::bd?<8> ChanIn; channel::bd! <8> ChanOut1; channel::bd! <8
 	// pulse generator
 	
 	bool pGenSt1, pGenSt2, pGenSt3;
-	cells::inv pGenInv1(ChanIn.a, pGenSt1);
-	cells::inv pGenInv2(pGenSt1, pGenSt2);
-	cells::inv pGenInv3(pGenSt2, pGenSt3);
+	std::cells::INVX1 pGenInv1(ChanIn.a, pGenSt1);
+	std::cells::INVX1 pGenInv2(pGenSt1, pGenSt2);
+	std::cells::INVX1 pGenInv3(pGenSt2, pGenSt3);
 	
 	bool pulse;
-	cells::AND2X1 pGenAnd(ChanIn.a, pGenSt3, pulse);
+	std::cells::AND2X1 pGenAnd(ChanIn.a, pGenSt3, pulse);
 	
 	// connecting each latch to the pulse generator
 	latch0.CLK = pulse;

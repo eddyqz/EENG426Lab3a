@@ -1,22 +1,73 @@
-watch in1
-watch in2
-watch ChanOut
+watch in1.d[0]
+watch in1.d[1]
+watch in1.d[2]
+watch in1.d[3]
+watch in1.d[4]
+watch in1.d[5]
+watch in1.d[6]
+watch in1.d[7]
+
+watch in2.d[0]
+watch in2.d[1]
+watch in2.d[2]
+watch in2.d[3]
+watch in2.d[4]
+watch in2.d[5]
+watch in2.d[6]
+watch in2.d[7]
+
+
+watch ChanOut.d[0]
+watch ChanOut.d[1]
+watch ChanOut.d[2]
+watch ChanOut.d[3]
+watch ChanOut.d[4]
+watch ChanOut.d[5]
+watch ChanOut.d[6]
+watch ChanOut.d[7]
+
 status X
 
-set in1 0
-set in2 0
+set in1.r 1
+set in1.d[0] 0
+set in1.d[1] 0
+set in1.d[2] 0
+set in1.d[3] 0
+set in1.d[4] 0
+set in1.d[5] 1
+set in1.d[6] 0
+set in1.d[7] 1
+
+set in2.r 1
+set in2.d[0] 0
+set in2.d[1] 0
+set in2.d[2] 1
+set in2.d[3] 1
+set in2.d[4] 0
+set in2.d[5] 0
+set in2.d[6] 0
+set in2.d[7] 0
+
+cycle
 cycle
 
-set in1 1
-set in2 2
-cycle
+set in1.d[0] 0
+set in1.d[1] 0
+set in1.d[2] 0
+set in1.d[3] 0
+set in1.d[4] 0
+set in1.d[5] 0
+set in1.d[6] 1
+set in1.d[7] 0
 
-set in1 20
-set in2 43
-cycle
+set in2.d[0] 0
+set in2.d[1] 0
+set in2.d[2] 0
+set in2.d[3] 0
+set in2.d[4] 1
+set in2.d[5] 0
+set in2.d[6] 0
+set in2.d[7] 0
 
-set in1 3
-set in2 4
 cycle
-
 

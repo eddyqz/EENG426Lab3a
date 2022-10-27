@@ -1,7 +1,7 @@
 import globals;
 import std::cells;
 import std::channel;
-import std::gates::treegates;
+import std::gates;
 
 //
 // your definitions go here
@@ -15,10 +15,10 @@ import std::gates::treegates;
 //
 open std::cells;
 open std::channel;
-open std::gates::treegates;
+open std::gates;
 
 
-defproc sum (channel::bd?<8> in1; channel::bd?<8> in2; channel::bd! <8> ChanOut)
+defproc sum (std::channel::bd?<8> in1; std::channel::bd?<8> in2; std::channel::bd! <8> ChanOut)
 {
 	// only need to declare input and output channels
 	/* need to write out the gates and for the control circuit (the circuit
@@ -39,7 +39,7 @@ defproc sum (channel::bd?<8> in1; channel::bd?<8> in2; channel::bd! <8> ChanOut)
 	
 	*/
 	
-	cells::LATCH latch00, latch01, latch02, latch03, latch04, latch05, latch06, latch07;
+	std::cells::LATCH latch00, latch01, latch02, latch03, latch04, latch05, latch06, latch07;
 	
 	// connects each latch's input to the input channel's data bits
 	latch00.D = in1.d[0];
@@ -51,7 +51,7 @@ defproc sum (channel::bd?<8> in1; channel::bd?<8> in2; channel::bd! <8> ChanOut)
 	latch06.D = in1.d[6];
 	latch07.D = in1.d[7];
 	
-	cells::LATCH latch10, latch11, latch12, latch13, latch14, latch15, latch16, latch17;
+	std::cells::LATCH latch10, latch11, latch12, latch13, latch14, latch15, latch16, latch17;
 	
 	// connects each latch's input to the input channel's data bits
 	latch10.D = in2.d[0];
@@ -66,7 +66,7 @@ defproc sum (channel::bd?<8> in1; channel::bd?<8> in2; channel::bd! <8> ChanOut)
 	// declare the full adder blocks that we need and connect the
 	// carry-ins with the carry-outs
 	
-	cells::FAX1 adder[8];
+	std::cells::FAX1 adder[8];
 	(i : 7 : adder[i].YC=adder[i+1].C;)
 	
 	// create bools to store the intermediate sum bit
@@ -96,18 +96,18 @@ defproc sum (channel::bd?<8> in1; channel::bd?<8> in2; channel::bd! <8> ChanOut)
 	// control circuit
 	
 	// inputs to c-element
-	bool _R.a;
-	cells::inv RaInv (ChanOut.a, _R.a);
+	bool _Ra;
+	std::cells::INVX1 RaInv (ChanOut.a, _Ra);
 	
 	bool cElemInput[2];
 	cElemInput[0] = ChanIn.r;
-	cElemInput[1] = _R.a;
+	cElemInput[1] = _Ra;
 	
 	bool cElemOutput;
-	std::gates::treegates::ctree<2,true> cElem(cElemInput, cElemOutput);
+	std::gates::ctree<2,true> cElem(cElemInput, cElemOutput);
 	
 	bool _cElemOutput;
-	cells::inv cElemInv (cElemOutput, _cElemOutput);
+	std::cells::INVX1 cElemInv (cElemOutput, _cElemOutput);
 	
 	ChanOut.r = _cElemOutput;
 	ChanIn.a = _cElemOutput;
@@ -115,12 +115,12 @@ defproc sum (channel::bd?<8> in1; channel::bd?<8> in2; channel::bd! <8> ChanOut)
 	// pulse generator
 	
 	bool pGenSt1, pGenSt2, pGenSt3;
-	cells::inv pGenInv1(ChanIn.a, pGenSt1);
-	cells::inv pGenInv2(pGenSt1, pGenSt2);
-	cells::inv pGenInv3(pGenSt2, pGenSt3);
+	std::cells::INVX1 pGenInv1(ChanIn.a, pGenSt1);
+	std::cells::INVX1 pGenInv2(pGenSt1, pGenSt2);
+	std::cells::INVX1 pGenInv3(pGenSt2, pGenSt3);
 	
 	bool pulse;
-	cells::AND2X1 pGenAnd(ChanIn.a, pGenSt3, pulse);
+	std::cells::AND2X1 pGenAnd(ChanIn.a, pGenSt3, pulse);
 	
 	// connecting each latch to the pulse generator
 	latch00.CLK = pulse;
